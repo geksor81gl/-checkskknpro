@@ -1,9 +1,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getAI = (apiKey?: string) => {
-  const key = apiKey || process.env.GEMINI_API_KEY;
+  // Use provided key or fall back to environment variable safely
+  const envKey = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined;
+  const key = apiKey || envKey;
+  
   if (!key) {
-    throw new Error("API Key is required. Please enter your Gemini API Key.");
+    throw new Error("API_KEY_MISSING");
   }
   return new GoogleGenAI({ apiKey: key });
 };

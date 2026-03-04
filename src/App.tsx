@@ -57,7 +57,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'fix'>('dashboard');
 
   const [userApiKey, setUserApiKey] = useState('');
-  const [showApiInput, setShowApiInput] = useState(false);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
@@ -91,9 +90,13 @@ export default function App() {
       const result = await analyzeFullDocument(text, userApiKey);
       setAnalysisResult(result);
       setActiveTab('dashboard');
-    } catch (error) {
-      console.error('Error processing file:', error);
-      alert('Có lỗi xảy ra khi xử lý tài liệu. Vui lòng thử lại.');
+    } catch (error: any) {
+      if (error.message === 'API_KEY_MISSING') {
+        alert('Vui lòng nhập Gemini API Key ở góc trên bên phải để sử dụng tính năng này.');
+      } else {
+        console.error('Error processing file:', error);
+        alert('Có lỗi xảy ra khi xử lý tài liệu. Vui lòng thử lại.');
+      }
     } finally {
       setIsProcessingFile(false);
     }
@@ -115,8 +118,12 @@ export default function App() {
     try {
       const result = await analyzeTitle(title, userApiKey);
       setTitleAnalysis(result);
-    } catch (error) {
-      console.error('Title analysis error:', error);
+    } catch (error: any) {
+      if (error.message === 'API_KEY_MISSING') {
+        alert('Vui lòng nhập Gemini API Key ở góc trên bên phải để sử dụng tính năng này.');
+      } else {
+        console.error('Title analysis error:', error);
+      }
     } finally {
       setIsAnalyzingTitle(false);
     }
@@ -126,13 +133,15 @@ export default function App() {
     if (!analysisResult) return;
     setIsFixing(true);
     try {
-      // In a real app, we'd pass the full text we extracted earlier.
-      // For this demo, we'll simulate fixing based on the summary or a placeholder.
       const fixed = await autoFixContent(analysisResult.summary, userApiKey);
       setFixedContent(fixed);
       setActiveTab('fix');
-    } catch (error) {
-      console.error('Auto fix error:', error);
+    } catch (error: any) {
+      if (error.message === 'API_KEY_MISSING') {
+        alert('Vui lòng nhập Gemini API Key ở góc trên bên phải để sử dụng tính năng này.');
+      } else {
+        console.error('Auto fix error:', error);
+      }
     } finally {
       setIsFixing(false);
     }
@@ -166,52 +175,29 @@ export default function App() {
               <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mt-1.5">Tạo và phát triển bởi thầy Ksor Gé</p>
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-bold text-slate-900">Tác giả: Thầy Ksor Gé</p>
+          <div className="hidden md:flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">API:</span>
+              <a 
+                href="https://aistudio.google.com/app/api-keys" 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors border-b border-indigo-200"
+              >
+                Lấy Key
+              </a>
             </div>
-            <button 
-              onClick={() => setShowApiInput(!showApiInput)}
-              className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500"
-              title="Cấu hình API Key"
-            >
-              <BrainCircuit className="w-5 h-5" />
-            </button>
+            <div className="relative">
+              <input 
+                type="password"
+                value={userApiKey}
+                onChange={(e) => setUserApiKey(e.target.value)}
+                placeholder="Điền Gemini API Key..."
+                className="w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all"
+              />
+            </div>
           </div>
         </div>
-        
-        <AnimatePresence>
-          {showApiInput && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="max-w-7xl mx-auto mt-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex flex-col md:flex-row items-center gap-4"
-            >
-              <div className="flex-1">
-                <p className="text-xs font-bold text-indigo-900 uppercase tracking-wider mb-1">Cấu hình Gemini API Key</p>
-                <p className="text-xs text-indigo-600">Sử dụng API Key cá nhân để tăng giới hạn lượt dùng.</p>
-              </div>
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <input 
-                  type="password"
-                  value={userApiKey}
-                  onChange={(e) => setUserApiKey(e.target.value)}
-                  placeholder="Nhập Gemini API Key của bạn..."
-                  className="flex-1 md:w-64 px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-                <a 
-                  href="https://aistudio.google.com/app/apikey" 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shrink-0"
-                >
-                  Lấy Key miễn phí
-                </a>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-6 space-y-8">
