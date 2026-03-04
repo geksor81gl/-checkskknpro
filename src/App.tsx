@@ -104,7 +104,7 @@ export default function App() {
         text = await selectedFile.text();
       }
 
-      const result = await analyzeFullDocument(text, userApiKey);
+      const result = await analyzeFullDocument(text, userApiKey.trim());
       setAnalysisResult(result);
       setActiveTab('dashboard');
     } catch (error: any) {
@@ -117,7 +117,7 @@ export default function App() {
     } finally {
       setIsProcessingFile(false);
     }
-  }, []);
+  }, [userApiKey]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
@@ -133,7 +133,7 @@ export default function App() {
     if (!title.trim()) return;
     setIsAnalyzingTitle(true);
     try {
-      const result = await analyzeTitle(title, userApiKey);
+      const result = await analyzeTitle(title, userApiKey.trim());
       setTitleAnalysis(result);
     } catch (error: any) {
       if (error.message === 'API_KEY_MISSING') {
@@ -150,7 +150,7 @@ export default function App() {
     if (!analysisResult) return;
     setIsFixing(true);
     try {
-      const fixed = await autoFixContent(analysisResult.summary, userApiKey);
+      const fixed = await autoFixContent(analysisResult.summary, userApiKey.trim());
       setFixedContent(fixed);
       setActiveTab('fix');
     } catch (error: any) {
