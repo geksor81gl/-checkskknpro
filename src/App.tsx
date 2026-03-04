@@ -56,30 +56,22 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'fix'>('dashboard');
 
-  const [userApiKey, setUserApiKey] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('gemini_api_key') || '';
-    }
-    return '';
-  });
+  const [userApiKey, setUserApiKey] = useState('');
   const [isApiKeySaved, setIsApiKeySaved] = useState(false);
 
   useEffect(() => {
-    if (userApiKey) {
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey) {
+      setUserApiKey(savedKey);
       setIsApiKeySaved(true);
     }
   }, []);
 
   const handleSaveApiKey = () => {
-    const trimmedKey = userApiKey.trim();
-    if (trimmedKey) {
-      localStorage.setItem('gemini_api_key', trimmedKey);
-      setUserApiKey(trimmedKey);
+    if (userApiKey.trim()) {
+      localStorage.setItem('gemini_api_key', userApiKey.trim());
       setIsApiKeySaved(true);
-      alert('Đã lưu API Key thành công!');
       setTimeout(() => setIsApiKeySaved(false), 3000);
-    } else {
-      alert('Vui lòng nhập mã API Key trước khi lưu.');
     }
   };
 
@@ -112,20 +104,12 @@ export default function App() {
         text = await selectedFile.text();
       }
 
-      const trimmedKey = userApiKey.trim();
-      if (!trimmedKey && !process.env.GEMINI_API_KEY) {
-        alert('Vui lòng nhập Gemini API Key ở góc trên bên phải để sử dụng tính năng này.');
-        return;
-      }
-
-      const result = await analyzeFullDocument(text, trimmedKey);
+      const result = await analyzeFullDocument(text, userApiKey);
       setAnalysisResult(result);
       setActiveTab('dashboard');
     } catch (error: any) {
       if (error.message === 'API_KEY_MISSING') {
         alert('Vui lòng nhập Gemini API Key ở góc trên bên phải để sử dụng tính năng này.');
-      } else if (error.message === 'API_KEY_INVALID') {
-        alert('Mã API Key không hợp lệ. Vui lòng kiểm tra lại mã bạn đã nhập.');
       } else {
         console.error('Error processing file:', error);
         alert('Có lỗi xảy ra khi xử lý tài liệu. Vui lòng thử lại.');
@@ -133,7 +117,7 @@ export default function App() {
     } finally {
       setIsProcessingFile(false);
     }
-  }, [userApiKey]);
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
@@ -147,21 +131,13 @@ export default function App() {
 
   const handleTitleAnalysis = async () => {
     if (!title.trim()) return;
-    const trimmedKey = userApiKey.trim();
-    if (!trimmedKey && !process.env.GEMINI_API_KEY) {
-      alert('Vui lòng nhập Gemini API Key ở góc trên bên phải để sử dụng tính năng này.');
-      return;
-    }
-
     setIsAnalyzingTitle(true);
     try {
-      const result = await analyzeTitle(title, trimmedKey);
+      const result = await analyzeTitle(title, userApiKey);
       setTitleAnalysis(result);
     } catch (error: any) {
       if (error.message === 'API_KEY_MISSING') {
         alert('Vui lòng nhập Gemini API Key ở góc trên bên phải để sử dụng tính năng này.');
-      } else if (error.message === 'API_KEY_INVALID') {
-        alert('Mã API Key không hợp lệ. Vui lòng kiểm tra lại mã bạn đã nhập.');
       } else {
         console.error('Title analysis error:', error);
       }
@@ -172,22 +148,14 @@ export default function App() {
 
   const handleAutoFix = async () => {
     if (!analysisResult) return;
-    const trimmedKey = userApiKey.trim();
-    if (!trimmedKey && !process.env.GEMINI_API_KEY) {
-      alert('Vui lòng nhập Gemini API Key ở góc trên bên phải để sử dụng tính năng này.');
-      return;
-    }
-
     setIsFixing(true);
     try {
-      const fixed = await autoFixContent(analysisResult.summary, trimmedKey);
+      const fixed = await autoFixContent(analysisResult.summary, userApiKey);
       setFixedContent(fixed);
       setActiveTab('fix');
     } catch (error: any) {
       if (error.message === 'API_KEY_MISSING') {
         alert('Vui lòng nhập Gemini API Key ở góc trên bên phải để sử dụng tính năng này.');
-      } else if (error.message === 'API_KEY_INVALID') {
-        alert('Mã API Key không hợp lệ. Vui lòng kiểm tra lại mã bạn đã nhập.');
       } else {
         console.error('Auto fix error:', error);
       }
@@ -236,7 +204,7 @@ export default function App() {
                 Lấy Key
               </a>
             </div>
-            <div className="flex items-center gap-2 relative">
+            <div className="flex items-center gap-2">
               <input 
                 type="password"
                 value={userApiKey}
@@ -245,16 +213,8 @@ export default function App() {
                   setIsApiKeySaved(false);
                 }}
                 placeholder="Gemini API Key..."
-                className={cn(
-                  "w-32 sm:w-48 px-3 py-2 bg-slate-50 border rounded-xl text-xs focus:ring-2 outline-none transition-all",
-                  userApiKey.trim().length >= 20 
-                    ? "border-emerald-200 focus:ring-emerald-500" 
-                    : "border-slate-200 focus:ring-indigo-500"
-                )}
+                className="w-32 sm:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all"
               />
-              {userApiKey.trim().length >= 20 && (
-                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white shadow-sm" title="Key hợp lệ" />
-              )}
               <button 
                 onClick={handleSaveApiKey}
                 className={cn(

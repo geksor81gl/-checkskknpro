@@ -8,10 +8,6 @@ const getAI = (apiKey?: string) => {
   if (!key) {
     throw new Error("API_KEY_MISSING");
   }
-  // Basic validation for Gemini API key format (usually starts with AIza)
-  if (key.length < 20) {
-    throw new Error("API_KEY_INVALID");
-  }
   return new GoogleGenAI({ apiKey: key });
 };
 
