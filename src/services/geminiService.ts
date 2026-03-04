@@ -1,9 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const getAI = (apiKey?: string) => {
-  // Use provided key or fall back to environment variable safely
-  const envKey = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined;
-  const key = apiKey || envKey;
+const getAI = () => {
+  // Priority: process.env.API_KEY (from dialog) > process.env.GEMINI_API_KEY (default)
+  const key = typeof process !== 'undefined' ? (process.env.API_KEY || process.env.GEMINI_API_KEY) : undefined;
   
   if (!key) {
     throw new Error("API_KEY_MISSING");
@@ -30,8 +29,8 @@ export interface SKKNAnalysis {
   references: { title: string; reason: string }[];
 }
 
-export const analyzeTitle = async (title: string, apiKey?: string): Promise<Partial<SKKNAnalysis>> => {
-  const ai = getAI(apiKey);
+export const analyzeTitle = async (title: string): Promise<Partial<SKKNAnalysis>> => {
+  const ai = getAI();
   const response = await ai.models.generateContent({
     model: "gemini-3.1-pro-preview",
     contents: `Phân tích tên đề tài Sáng kiến kinh nghiệm (SKKN) sau đây theo Thông tư 27/2020/TT-BGDĐT: "${title}"`,
@@ -56,8 +55,8 @@ export const analyzeTitle = async (title: string, apiKey?: string): Promise<Part
   return JSON.parse(response.text || "{}");
 };
 
-export const analyzeFullDocument = async (content: string, apiKey?: string): Promise<SKKNAnalysis> => {
-  const ai = getAI(apiKey);
+export const analyzeFullDocument = async (content: string): Promise<SKKNAnalysis> => {
+  const ai = getAI();
   const response = await ai.models.generateContent({
     model: "gemini-3.1-pro-preview",
     contents: `Bạn là chuyên gia thẩm định SKKN. Hãy phân tích nội dung sau đây theo Thông tư 27/2020/TT-BGDĐT:
@@ -112,8 +111,8 @@ export const analyzeFullDocument = async (content: string, apiKey?: string): Pro
   return JSON.parse(response.text || "{}");
 };
 
-export const autoFixContent = async (content: string, apiKey?: string): Promise<string> => {
-  const ai = getAI(apiKey);
+export const autoFixContent = async (content: string): Promise<string> => {
+  const ai = getAI();
   const response = await ai.models.generateContent({
     model: "gemini-3.1-pro-preview",
     contents: `Hãy thực hiện chế độ AUTO FIX cho nội dung SKKN sau:

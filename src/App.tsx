@@ -56,22 +56,24 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'fix'>('dashboard');
 
-  const [userApiKey, setUserApiKey] = useState('');
-  const [isApiKeySaved, setIsApiKeySaved] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('gemini_api_key');
-    if (savedKey) {
-      setUserApiKey(savedKey);
-      setIsApiKeySaved(true);
-    }
+    const checkKey = async () => {
+      if ((window as any).aistudio?.hasSelectedApiKey) {
+        const has = await (window as any).aistudio.hasSelectedApiKey();
+        setHasApiKey(has);
+      }
+    };
+    checkKey();
+    const interval = setInterval(checkKey, 3000);
+    return () => clearInterval(interval);
   }, []);
 
-  const handleSaveApiKey = () => {
-    if (userApiKey.trim()) {
-      localStorage.setItem('gemini_api_key', userApiKey.trim());
-      setIsApiKeySaved(true);
-      setTimeout(() => setIsApiKeySaved(false), 3000);
+  const handleOpenKeySelector = async () => {
+    if ((window as any).aistudio?.openSelectKey) {
+      await (window as any).aistudio.openSelectKey();
+      setHasApiKey(true);
     }
   };
 
@@ -104,7 +106,7 @@ export default function App() {
         text = await selectedFile.text();
       }
 
-      const result = await analyzeFullDocument(text, userApiKey);
+      const result = await analyzeFullDocument(text);
       setAnalysisResult(result);
       setActiveTab('dashboard');
     } catch (error: any) {
@@ -133,7 +135,7 @@ export default function App() {
     if (!title.trim()) return;
     setIsAnalyzingTitle(true);
     try {
-      const result = await analyzeTitle(title, userApiKey);
+      const result = await analyzeTitle(title);
       setTitleAnalysis(result);
     } catch (error: any) {
       if (error.message === 'API_KEY_MISSING') {
@@ -150,7 +152,7 @@ export default function App() {
     if (!analysisResult) return;
     setIsFixing(true);
     try {
-      const fixed = await autoFixContent(analysisResult.summary, userApiKey);
+      const fixed = await autoFixContent(analysisResult.summary);
       setFixedContent(fixed);
       setActiveTab('fix');
     } catch (error: any) {
@@ -196,43 +198,33 @@ export default function App() {
             <div className="hidden sm:flex items-center gap-2">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">API:</span>
               <a 
-                href="https://aistudio.google.com/app/api-keys" 
+                href="https://ai.google.dev/gemini-api/docs/billing" 
                 target="_blank" 
                 rel="noreferrer"
                 className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors border-b border-indigo-200"
               >
-                Lấy Key
+                Hướng dẫn Billing
               </a>
             </div>
             <div className="flex items-center gap-2">
-              <input 
-                type="password"
-                value={userApiKey}
-                onChange={(e) => {
-                  setUserApiKey(e.target.value);
-                  setIsApiKeySaved(false);
-                }}
-                placeholder="Gemini API Key..."
-                className="w-32 sm:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all"
-              />
               <button 
-                onClick={handleSaveApiKey}
+                onClick={handleOpenKeySelector}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm",
-                  isApiKeySaved 
+                  "px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm",
+                  hasApiKey 
                     ? "bg-emerald-500 text-white" 
                     : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
                 )}
               >
-                {isApiKeySaved ? (
+                {hasApiKey ? (
                   <>
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Đã lưu</span>
+                    <span>API Key: Đã kết nối</span>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-3.5 h-3.5 rotate-180" />
-                    <span>Lưu Key</span>
+                    <BrainCircuit className="w-3.5 h-3.5" />
+                    <span>Cài đặt Gemini API Key</span>
                   </>
                 )}
               </button>
