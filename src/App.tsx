@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { 
   Search, 
   Upload, 
@@ -57,6 +57,23 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'fix'>('dashboard');
 
   const [userApiKey, setUserApiKey] = useState('');
+  const [isApiKeySaved, setIsApiKeySaved] = useState(false);
+
+  useEffect(() => {
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey) {
+      setUserApiKey(savedKey);
+      setIsApiKeySaved(true);
+    }
+  }, []);
+
+  const handleSaveApiKey = () => {
+    if (userApiKey.trim()) {
+      localStorage.setItem('gemini_api_key', userApiKey.trim());
+      setIsApiKeySaved(true);
+      setTimeout(() => setIsApiKeySaved(false), 3000);
+    }
+  };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
@@ -175,8 +192,8 @@ export default function App() {
               <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mt-1.5">Tạo và phát triển bởi thầy Ksor Gé</p>
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="hidden sm:flex items-center gap-2">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">API:</span>
               <a 
                 href="https://aistudio.google.com/app/api-keys" 
@@ -187,14 +204,38 @@ export default function App() {
                 Lấy Key
               </a>
             </div>
-            <div className="relative">
+            <div className="flex items-center gap-2">
               <input 
                 type="password"
                 value={userApiKey}
-                onChange={(e) => setUserApiKey(e.target.value)}
-                placeholder="Điền Gemini API Key..."
-                className="w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all"
+                onChange={(e) => {
+                  setUserApiKey(e.target.value);
+                  setIsApiKeySaved(false);
+                }}
+                placeholder="Gemini API Key..."
+                className="w-32 sm:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all"
               />
+              <button 
+                onClick={handleSaveApiKey}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm",
+                  isApiKeySaved 
+                    ? "bg-emerald-500 text-white" 
+                    : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
+                )}
+              >
+                {isApiKeySaved ? (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Đã lưu</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3.5 h-3.5 rotate-180" />
+                    <span>Lưu Key</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
